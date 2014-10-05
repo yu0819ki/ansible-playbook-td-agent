@@ -1,0 +1,65 @@
+---
+- name: check distribute
+  fail: msg='this tasks support for CentOS 6.x only. Your distribution is {{ ansible_distribution }} {{ ansible_distribution_version }}'
+  when: ansible_distribution_version|truncate(1, True, '') != '6'
+- name: put yum.repo
+  copy: src=etc/yum.repos.d/td.repo dest=/etc/yum.repos.d/td.repo
+- name: install td-agent with libcurl
+  yum: pkg={{ item }} state=present
+  with_items:
+    - td-agent
+    - libcurl
+    - libcurl-devel
+
+- name: install elasticsearch-plugin
+  gem: name=fluent-plugin-elasticsearch executable={{ td_fluent_gem_path | default('/usr/lib64/fluent/ruby/bin/fluent-gem')}} include_dependencies=yes user_install=no state=present
+  when: '"elasticsearch" in td_conf_include'
+
+- name: follow missing directory
+  file: path=/etc/td-agent/conf.d state=directory
+- name: put td-agent.conf
+  template: src=etc/td-agent/td-agent.conf.j2 dest=/etc/td-agent/td-agent.conf
+  register: check_changes
+- command: echo "has_changes?"
+  register: has_changes
+  when: check_changes|changed
+
+- name: put default.conf for include
+  template: src=etc/td-agent/conf.d/default.conf.j2 dest=/etc/td-agent/conf.d/default.conf
+  register: check_changes
+- command: echo "has_changes?"
+  register: has_changes
+  when: check_changes|changed
+
+- name: put nginx.conf for include
+  template: src=etc/td-agent/conf.d/nginx.conf.j2 dest=/etc/td-agent/conf.d/nginx.conf
+  register: check_changes
+  when: '"nginx" in td_conf_include'
+- command: echo "has_changes?"
+  register: has_changes
+  when: check_changes|changed
+
+- name: put elasticsearch.conf for include
+  template: src=etc/td-agent/conf.d/elasticsearch.conf.j2 dest=/etc/td-agent/conf.d/elasticsearch.conf
+  register: check_changes
+  when: '"elasticsearch" in td_conf_include'
+- command: echo "has_changes?"
+  register: has_changes
+  when: check_changes|changed
+
+- name: put rewrite_tag.conf for include
+  template: src=etc/td-agent/conf.d/rewrite_tag.conf.j2 dest=/etc/td-agent/conf.d/rewrite_tag.conf
+  register: check_changes
+  when: '"rewrite_tag" in td_conf_include'
+- command: echo "has_changes?"
+  register: has_changes
+  when: check_changes|changed
+
+- name: chkconfig on
+  command: chkconfig td-agent on
+- name: td-agent start (if no changes exists)
+  service: name=td-agent state=started
+  when: not (has_changes|changed)
+- name: td-agent restart (if changes exists)
+  service: name=td-agent state=restarted
+  when: has_changes|changed

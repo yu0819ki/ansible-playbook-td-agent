@@ -1,0 +1,34 @@
+<match nginx.**>
+  type forward
+  <server>
+    name {{ td_aggrigator_name }}
+    host {{ td_aggrigator_host }}
+    port {{ td_aggrigator_port | default('24224') }}
+  </server>
+</match>
+
+<source>
+  type tail
+  format nginx
+  path {{ td_nginx_access_log | default('/var/log/nginx/access.log') }}
+  pos_file {{ td_nginx_access_log_pos | default('/var/log/td-agent/access.log.pos') }}
+  tag nginx.access
+</source>
+
+<source>
+  type tail
+  format /^(?<time>.+) \[(?<level>[^\]]+)\] *(?<message>.*)$/
+  path {{ td_nginx_error_log | default('/var/log/nginx/error.log') }}
+  time_format %Y/%m/%d %H:%M:%S
+  pos_file {{ td_nginx_error_log_pos | default('/var/log/td-agent/error.log.pos') }}
+  tag nginx.error
+</source>
+
+<source>
+  type tail
+  format ltsv
+  path {{ td_nginx_access_ltsv_log | default('/var/log/nginx/access.ltsv.log') }}
+  time_format %d/%b/%Y:%H:%M:%S %z
+  pos_file {{ td_nginx_access_log_pos | default('/var/log/td-agent/access.ltsv.log.pos') }}
+  tag nginx.access.ltsv
+</source>

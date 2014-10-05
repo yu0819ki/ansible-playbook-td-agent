@@ -1,0 +1,4 @@
+include conf.d/default.conf
+{% for inc in td_conf_include %}
+include conf.d/{{ inc }}.conf
+{% endfor %}

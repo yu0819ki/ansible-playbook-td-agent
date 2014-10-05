@@ -1,0 +1,24 @@
+# Perhaps in_forward type is already declared in "default.conf".
+# <source>
+#   type forward
+# </source>
+
+{% for es_out in td_es_out_rules %}
+<match {{ es_out.match }}>
+  type elasticsearch
+  type_name {{ es_out.name }}
+  host {{es_out.host | default('localhost') }}
+  port {{ es_out.port | default('9200') }}
+  {%- if es_out.logstash_format == True %}
+
+  logstash_format true
+  {%- endif %}
+
+  include_tag_key true
+  tag_key @log_name
+</match>
+{% endfor %}
+
+<match **>
+  type stdout
+</match>

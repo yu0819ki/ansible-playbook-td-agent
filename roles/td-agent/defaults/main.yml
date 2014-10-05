@@ -1,0 +1,14 @@
+---
+td_api_key: "12345"
+td_conf_include: []
+td_es_out_rules:
+  - name: access_log
+    match: es.nginx.access.ltsv
+    logstash_format: True
+td_rewrite_tag_rules:
+  - match: nginx.**.ltsv
+    backref: yes
+    rules:
+      - key: path
+        regex: '.*'
+        tag: 'es.${tag}'

@@ -1,0 +1,9 @@
+{% for rewrite_tag in td_rewrite_tag_rules %}
+<match {{ rewrite_tag.match }}>
+  type rewrite_tag_filter
+  capitalize_regex_backreference {{ rewrite_tag.backref | default('no') }}
+{% for rewriterule in rewrite_tag.rules %}
+  rewriterule{{ loop.index }} {{ rewriterule.key }} {{ rewriterule.regex }} {{ rewriterule.tag }}
+{% endfor %}
+</match>
+{% endfor %}
